@@ -14,36 +14,65 @@ class AppShell extends StatelessWidget {
     (Icons.tune, 'Settings'),
   ];
 
+  List<Widget> _items() => [
+    for (final (i, (icon, label)) in _destinations.indexed)
+      _NavItem(
+        icon: icon,
+        label: label,
+        selected: i == shell.currentIndex,
+        onTap: () =>
+            shell.goBranch(i, initialLocation: i == shell.currentIndex),
+      ),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final landscape =
+        MediaQuery.orientationOf(context) == Orientation.landscape;
+
     return Scaffold(
-      body: shell,
-      bottomNavigationBar: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-          child: NeuBox(
-            radius: 24,
-            padding: const EdgeInsets.all(8),
-            child: Row(
-              children: [
-                for (final (i, (icon, label)) in _destinations.indexed)
-                  Expanded(
-                    child: _NavItem(
-                      icon: icon,
-                      label: label,
-                      selected: i == shell.currentIndex,
-                      onTap: () => shell.goBranch(
-                        i,
-                        initialLocation: i == shell.currentIndex,
-                      ),
+      body: Row(
+        children: [
+          if (landscape)
+            SafeArea(
+              right: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 4, 12),
+                child: NeuBox(
+                  radius: 24,
+                  padding: const EdgeInsets.all(8),
+                  child: SizedBox(
+                    width: 84,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 8,
+                      children: _items(),
                     ),
                   ),
-              ],
+                ),
+              ),
             ),
-          ),
-        ),
+          Expanded(key: const ValueKey('content'), child: shell),
+        ],
       ),
+      bottomNavigationBar: landscape
+          ? null
+          : SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                child: NeuBox(
+                  radius: 24,
+                  padding: const EdgeInsets.all(8),
+                  child: Row(
+                    children: [
+                      for (final item in _items()) Expanded(child: item),
+                    ],
+                  ),
+                ),
+              ),
+            ),
     );
   }
 }
