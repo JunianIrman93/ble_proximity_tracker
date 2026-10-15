@@ -5,7 +5,7 @@ Aplikasi Flutter untuk memindai perangkat Bluetooth Low Energy di sekitar secara
 | Tab / layar | Isi |
 |---|---|
 | **Scan** | Start/Stop scan, ringkasan (jumlah perangkat aktif, sinyal terkuat), daftar perangkat (nama, MAC/UUID, estimasi jarak, RSSI mentah, meter sinyal) urut sinyal terkuat, pencarian nama/MAC, filter cepat RSSI, filter detail di bottom sheet |
-| **Radar** | Radar per zona sesuai tabel brief, estimasi jarak, skala zona, RSSI mentah vs smoothed, stabilitas sinyal (±dB), grafik 60 pembacaan terakhir, status *Signal lost* |
+| **Radar** | Radar per zona sesuai tabel brief, estimasi jarak beserta rentang zonanya, skala zona, RSSI mentah vs smoothed, stabilitas sinyal (±dB), grafik 60 pembacaan terakhir, status *Signal lost* |
 | **History** | Perangkat yang pernah terdeteksi dikelompokkan per hari, waktu terakhir & pertama terlihat, RSSI terakhir & terbaik, pencarian, hapus riwayat |
 | **Settings** | Tema Dark / Light / System (default), tabel zona sinyal, penjelasan model jarak |
 
@@ -111,6 +111,10 @@ Gaya **neumorphism** dengan nuansa kalkulator digital.
   - Gelap `#2A2E35` dan terang `#E0E5EC`. Default-nya mengikuti tema sistem HP, dan bisa diganti di Settings (Dark / Light / System, tersimpan).
   - Warna zona sinyal hijau → merah menjadi satu-satunya warna jenuh di UI. Untuk teks, warna zona digelapkan (tema terang) atau dicerahkan (tema gelap).
   - Semua warna teks, termasuk teks sekunder, aksen, error, dan label zona, memiliki kontras ≥ 4,5:1 terhadap warna dasar di kedua tema. Kontras rendah adalah kelemahan umum neumorphism.
+- **Landscape.**
+  - Bottom navigation berubah menjadi rail vertikal di kiri, supaya konten mendapat tinggi layar penuh.
+  - Di layar Radar, piringan radar mengisi kolom kiri setinggi layar, sedangkan jarak dan metrik koneksi ada di kolom kanan.
+- **Aksesibilitas.** Setiap tombol neumorphism (`NeuButton`, `NeuIconButton`, tab, filter, pilihan tema) adalah node semantik tersendiri yang punya label. Dengan begitu TalkBack tidak membaca seluruh kartu sebagai satu tombol, dan tombol ikon disebut dengan namanya.
 - **Layar LCD.** Semua angka tampil di jendela LCD cekung (`LcdPanel` + `DigitalReadout`), seperti layar kalkulator retro. Jendela ini dipakai di statistik scan, RSSI di kartu perangkat dan riwayat, jarak di radar, dan metrik koneksi.
   - Tema terang: layar hijau keabuan `#C5D0B0`, digit `#1E2A1A` (9,3:1), label `#4A5A40` (4,6:1).
   - Tema gelap: layar hampir hitam `#141B16`, digit hijau `#8FD58A` (10,1:1) dengan cahaya samar seperti layar ber-*backlight*, label `#6E9A68` (5,4:1).
@@ -136,7 +140,7 @@ Gaya **neumorphism** dengan nuansa kalkulator digital.
 ## Keputusan teknis
 
 - **Kalibrasi jarak.** `d = 10^((A − RSSI) / (10·n))` dengan `A = −32 dBm`, `n = 3.8`. Nilai ini dipilih agar cocok dengan tabel brief: −30 → 0,9 m, −50 → 3 m, −70 → 10 m, −80 → 18 m, −90 → 34 m.
-- **Smoothing + hysteresis.** RSSI di-smooth dengan EMA (α = 0,3). Zona baru berubah setelah sinyal melewati batas lebih dari 3 dB, sehingga indikator tidak berkedip di perbatasan.
+- **Smoothing + hysteresis.** RSSI di-smooth dengan EMA (α = 0,3). Zona baru berubah setelah sinyal melewati batas lebih dari 3 dB, sehingga indikator tidak berkedip di perbatasan. Angka jarak tetap dihitung langsung dari RSSI yang di-smooth, jadi di dekat batas zona angkanya bisa sedikit di luar rentang zona (misalnya 3,4 m saat zona masih *Strong*, 1–3 m). Karena itu rentang zona ditampilkan sebagai keterangan zona, bukan sebagai judul angka jarak.
 - **Batching.** Paket advertising datang puluhan kali per detik. Daftar di-update dan history ditulis setiap 500 ms dalam satu transaksi.
 - **Perangkat aktif.** Perangkat yang tidak advertise selama 15 detik keluar dari daftar scan (tetap ada di History). Di radar, target dianggap hilang setelah 5 detik tanpa paket.
 - **Throttling Android.** Android mengabaikan scan setelah 5 kali start dalam 30 detik tanpa memberi error. Use case `StartScan` menolak start ke-6 dan memberi tahu berapa detik harus menunggu.
@@ -145,7 +149,7 @@ Gaya **neumorphism** dengan nuansa kalkulator digital.
   - Izin ditolak → tombol *Allow*; ditolak permanen → tombol ke App Settings. Status "permanen" dideteksi lewat `shouldShowRequestRationale`, karena izin diminta lewat `universal_ble` sehingga `permission_handler` tidak bisa melaporkannya sendiri. Saat app kembali ke foreground, status izin dicek ulang tanpa memunculkan dialog, jadi banner hilang begitu izin diberikan di Settings.
   - Target hilang di radar → status *Signal lost*, pulih otomatis saat sinyal kembali.
   - Gagal menulis history tidak menghentikan scan.
-- **Lifecycle.** Scan hanya berjalan di foreground: berhenti saat app ke background, lanjut saat kembali, kecuali user yang menghentikannya. Rotasi tidak me-restart scan karena `ScannerBloc` hidup di atas router dan Activity memakai `configChanges`. Layar radar punya layout landscape sendiri.
+- **Lifecycle.** Scan hanya berjalan di foreground: berhenti saat app ke background, lanjut saat kembali, kecuali user yang menghentikannya. Rotasi tidak me-restart scan karena `ScannerBloc` hidup di atas router dan Activity memakai `configChanges`. Struktur widget tree sama di kedua orientasi, sehingga teks pencarian dan posisi scroll tetap bertahan saat layar diputar.
 
 ## Asumsi
 
@@ -173,8 +177,8 @@ flutter test
 |---|---|
 | `test/core/signal_test.dart` | Pemetaan zona, kalibrasi jarak, EMA, hysteresis, throttle guard |
 | `test/core/start_scan_test.dart` | Urutan prasyarat scan dan pemetaan setiap `Failure` |
-| `test/features/scanner/scanner_bloc_test.dart` | Urutan sinyal, filter, merge nama, pruning, izin ditolak (tetap setelah resume, pulih setelah diizinkan di Settings), Bluetooth off→on, background→foreground, throttling |
+| `test/features/scanner/scanner_bloc_test.dart` | Urutan sinyal, filter, sinyal terkuat dihitung dari semua perangkat (tidak terpengaruh filter), merge nama, pruning, izin ditolak (tetap setelah resume, pulih setelah diizinkan di Settings), Bluetooth off→on, background→foreground, throttling |
 | `test/features/radar/radar_test.dart` | Smoothing, zona, deteksi lost & pemulihan, filter perangkat target, `RadarBloc` |
 | `test/features/history/history_test.dart` | Upsert DAO (nama, RSSI terbaik, first seen), urutan, `HistoryCubit` |
 | `test/features/settings/theme_cubit_test.dart` | Default System, load & simpan preferensi |
-| `test/widget_test.dart` | Tampilan `DeviceCard` |
+| `test/widget_test.dart` | Tampilan `DeviceCard`, semantik aksesibilitas `NeuButton` dan `NeuIconButton` |
