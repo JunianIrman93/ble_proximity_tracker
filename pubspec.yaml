@@ -2,7 +2,7 @@ name: ble_proximity_tracker
 description: "Pelacak kedekatan perangkat BLE: scan real-time, radar zona RSSI, dan riwayat lokal."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 1.0.1+2
 
 environment:
   sdk: ^3.13.5
