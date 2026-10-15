@@ -63,24 +63,41 @@ class _RadarView extends StatelessWidget {
         body: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final radar = _RadarCard(state: state);
               final details = _Details(state: state);
               const banner = _ScanPausedBanner();
 
               if (constraints.maxWidth > constraints.maxHeight) {
                 return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16),
-                        child: radar,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 8, 8, 16),
+                        child: NeuBox(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            children: [
+                              Expanded(
+                                child: Center(child: _RadarDish(state: state)),
+                              ),
+                              const SizedBox(height: 16),
+                              ZoneScale(current: state.snapshot.zone),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                     Expanded(
                       child: ListView(
-                        padding: const EdgeInsets.fromLTRB(0, 16, 16, 16),
-                        children: [banner, details],
+                        padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+                        children: [
+                          banner,
+                          NeuBox(
+                            padding: const EdgeInsets.all(20),
+                            child: _DistanceSection(state: state),
+                          ),
+                          const SizedBox(height: 28),
+                          details,
+                        ],
                       ),
                     ),
                   ],
@@ -88,7 +105,12 @@ class _RadarView extends StatelessWidget {
               }
               return ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                children: [banner, radar, const SizedBox(height: 28), details],
+                children: [
+                  banner,
+                  _RadarCard(state: state),
+                  const SizedBox(height: 28),
+                  details,
+                ],
               );
             },
           ),
@@ -105,6 +127,34 @@ class _RadarCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return NeuBox(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _DistanceSection(state: state),
+          const SizedBox(height: 24),
+          Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 320),
+              child: _RadarDish(state: state),
+            ),
+          ),
+          const SizedBox(height: 24),
+          ZoneScale(current: state.snapshot.zone),
+        ],
+      ),
+    );
+  }
+}
+
+class _DistanceSection extends StatelessWidget {
+  const _DistanceSection({required this.state});
+
+  final RadarState state;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final snapshot = state.snapshot;
     final zone = snapshot.zone;
@@ -112,74 +162,81 @@ class _RadarCard extends StatelessWidget {
     final lost = snapshot.isLost || distance == null;
     final lcd = LcdColors.of(context);
 
-    return NeuBox(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            ZonePill(zone),
+            const Spacer(),
+            Text(
+              zone == SignalZone.lost
+                  ? zone.proximity
+                  : '${zone.proximity} · ${zone.distanceRange}',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        LcdPanel(
+          depth: 4,
+          radius: 16,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              ZonePill(zone),
-              const Spacer(),
               Text(
-                zone.proximity,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+                lost
+                    ? 'Move closer or check that the device is on.'
+                    : 'Estimated distance',
+                style: theme.textTheme.labelSmall?.copyWith(color: lcd.label),
+              ),
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: lost
+                    ? Text(
+                        'SIGNAL LOST',
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          color: lcd.ink,
+                          letterSpacing: 2,
+                        ),
+                      )
+                    : _DistanceReadout(meters: distance),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          LcdPanel(
-            depth: 4,
-            radius: 16,
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  lost
-                      ? 'Move closer or check that the device is on.'
-                      : 'Estimated distance · ${zone.distanceRange}',
-                  style: theme.textTheme.labelSmall?.copyWith(color: lcd.label),
-                ),
-                const SizedBox(height: 12),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: lost
-                      ? Text(
-                          'SIGNAL LOST',
-                          style: theme.textTheme.headlineSmall?.copyWith(
-                            color: lcd.ink,
-                            letterSpacing: 2,
-                          ),
-                        )
-                      : _DistanceReadout(meters: distance),
-                ),
-              ],
-            ),
+        ),
+      ],
+    );
+  }
+}
+
+class _RadarDish extends StatelessWidget {
+  const _RadarDish({required this.state});
+
+  final RadarState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 1,
+      child: NeuBox(
+        circle: true,
+        depth: 8,
+        padding: const EdgeInsets.all(12),
+        child: NeuBox(
+          circle: true,
+          inset: true,
+          depth: 6,
+          padding: const EdgeInsets.all(6),
+          child: RadarView(
+            zone: state.snapshot.zone,
+            distanceMeters: state.snapshot.distanceMeters,
           ),
-          const SizedBox(height: 24),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 320),
-              child: NeuBox(
-                circle: true,
-                depth: 8,
-                padding: const EdgeInsets.all(12),
-                child: NeuBox(
-                  circle: true,
-                  inset: true,
-                  depth: 6,
-                  padding: const EdgeInsets.all(6),
-                  child: RadarView(zone: zone, distanceMeters: distance),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          ZoneScale(current: zone),
-        ],
+        ),
       ),
     );
   }
