@@ -44,9 +44,8 @@ class AppShell extends StatelessWidget {
                   child: SizedBox(
                     width: 84,
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      spacing: 8,
                       children: _items(),
                     ),
                   ),
