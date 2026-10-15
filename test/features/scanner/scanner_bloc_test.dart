@@ -75,6 +75,21 @@ void main() {
     expect(saved.map((d) => d.id), containsAll(['AA', 'BB', 'CC']));
   });
 
+  test('strongest signal ignores the active filter', () async {
+    final bloc = await scanningBloc();
+    ble
+      ..emitAdvertisement(device('AA', -45))
+      ..emitAdvertisement(device('BB', -70, name: 'Watch'));
+    await pump();
+    bloc
+      ..flush()
+      ..add(const NamedOnlyChanged(true));
+    await pump();
+
+    expect(bloc.state.visibleDevices.map((d) => d.id), ['BB']);
+    expect(bloc.state.strongest?.id, 'AA');
+  });
+
   test('applies minimum RSSI, named-only and search filters', () async {
     final bloc = await scanningBloc();
     ble

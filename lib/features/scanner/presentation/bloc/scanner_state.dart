@@ -34,8 +34,10 @@ class ScannerState extends Equatable {
   final DeviceFilter filter;
   final ScannerMessage? message;
 
-  ScannedDevice? get strongest =>
-      visibleDevices.isEmpty ? null : visibleDevices.first;
+  ScannedDevice? get strongest => devices.values.fold<ScannedDevice?>(
+    null,
+    (best, d) => best == null || d.rssi > best.rssi ? d : best,
+  );
 
   static const _unset = Object();
 
