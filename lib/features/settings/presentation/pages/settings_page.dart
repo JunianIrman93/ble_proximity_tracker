@@ -131,6 +131,7 @@ class _ThemeOption extends StatelessWidget {
         : theme.colorScheme.onSurfaceVariant;
 
     return Semantics(
+      container: true,
       selected: selected,
       button: true,
       child: NeuBox(

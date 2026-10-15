@@ -54,6 +54,7 @@ class _FilterKey extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Semantics(
+      container: true,
       selected: selected,
       button: true,
       child: NeuBox(

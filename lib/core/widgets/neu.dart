@@ -224,9 +224,9 @@ class NeuButton extends StatelessWidget {
         : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
 
     return Semantics(
+      container: true,
       button: true,
       enabled: enabled,
-      toggled: latched ? true : null,
       child: NeuBox(
         onTap: onPressed,
         inset: latched,
@@ -279,9 +279,12 @@ class NeuIconButton extends StatelessWidget {
     final enabled = onPressed != null;
     return Tooltip(
       message: tooltip,
+      excludeFromSemantics: true,
       child: Semantics(
+        container: true,
         button: true,
         enabled: enabled,
+        label: tooltip,
         child: NeuBox(
           circle: true,
           depth: enabled ? 4 : 0,
