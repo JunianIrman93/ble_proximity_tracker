@@ -182,3 +182,21 @@ flutter test
 | `test/features/history/history_test.dart` | Upsert DAO (nama, RSSI terbaik, first seen), urutan, `HistoryCubit` |
 | `test/features/settings/theme_cubit_test.dart` | Default System, load & simpan preferensi |
 | `test/widget_test.dart` | Tampilan `DeviceCard`, semantik aksesibilitas `NeuButton` dan `NeuIconButton` |
+
+## Penggunaan AI
+
+Proyek ini dikerjakan dengan bantuan AI generatif, yaitu Claude (Anthropic) melalui Claude Code.
+
+AI dipakai untuk:
+
+- Menulis dan merapikan kode: fitur, arsitektur, test, dan konfigurasi Android (signing release, splash screen, ikon aplikasi).
+- Menerapkan desain UI: tema neumorphism, layar LCD dengan font 7-segmen, ikon aplikasi, dan layout landscape.
+- Menulis dokumentasi README dan pesan commit.
+- Menguji aplikasi di HP fisik lewat `adb`, termasuk menemukan dan memperbaiki bug pada penanganan izin, tampilan landscape, perhitungan sinyal terkuat, dan aksesibilitas.
+
+Peran saya:
+
+- Menentukan arah desain dan fitur, antara lain gaya neumorphism, font digital, layar LCD hijau, tema default yang mengikuti sistem, dan rail navigasi di landscape.
+- Meninjau setiap usulan perubahan dan memutuskan mana yang dipakai.
+- Menyediakan HP fisik (Samsung Galaxy A52, Android 14) untuk pengujian.
+- Menyetujui pembuatan repositori, keystore release, dan rilis APK.
